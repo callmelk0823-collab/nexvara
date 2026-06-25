@@ -6,6 +6,9 @@ import {
   Sparkles, TrendingUp, Users, Award, MessageSquare, Mail,
   Phone, MapPin, Twitter, Github, Linkedin, ChevronLeft, ChevronRight
 } from "lucide-react";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router";
+import Login from "./components/Login.tsx";
+import { authApi } from "./api.ts";
 
 // ── Utility ────────────────────────────────────────────────────────────────
 function cn(...classes: (string | boolean | undefined | null)[]) {
@@ -14,14 +17,27 @@ function cn(...classes: (string | boolean | undefined | null)[]) {
 
 // ── Nav ────────────────────────────────────────────────────────────────────
 function Nav() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState(authApi.getCurrentUser());
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  useEffect(() => {
+    setUser(authApi.getCurrentUser());
+  }, [location]);
+
+  const handleLogout = () => {
+    authApi.logout();
+    setUser(null);
+    navigate('/');
+  };
 
   const links = ["Features", "Services", "Pricing", "Testimonials", "FAQ", "Contact"];
 
@@ -35,7 +51,7 @@ function Nav() {
       )}
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f6ef7] to-[#7c3aed] flex items-center justify-center shadow-[0_0_20px_rgba(79,110,247,0.5)]">
             <Zap size={16} className="text-white" />
           </div>
@@ -58,13 +74,46 @@ function Nav() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <button style={{ fontFamily: "'DM Sans', sans-serif" }} className="text-[#7b80a8] hover:text-white text-sm font-medium transition-colors px-4 py-2">
-            Sign in
-          </button>
-          <button className="relative group px-5 py-2 rounded-lg text-sm font-semibold text-white overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#4f6ef7] to-[#7c3aed] group-hover:opacity-90 transition-opacity" />
-            <span className="relative">Get Started</span>
-          </button>
+          {user ? (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5 border border-[rgba(79,110,247,0.2)] bg-[rgba(79,110,247,0.06)] rounded-full px-3 py-1.5 backdrop-blur-md">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#4f6ef7] to-[#7c3aed] flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-sm">
+                  {user.name ? user.name[0] : (user.email ? user.email[0] : 'U')}
+                </div>
+                <div className="flex flex-col text-left">
+                  {user.name && (
+                    <span className="text-white text-xs font-semibold leading-none">{user.name}</span>
+                  )}
+                  <span className="text-[#7b80a8] text-[10px] leading-tight font-medium max-w-[140px] truncate">{user.email}</span>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+                className="text-[#7b80a8] hover:text-red-400 text-sm font-medium transition-colors px-4 py-2 border border-[rgba(79,110,247,0.12)] hover:border-red-500/30 rounded-lg hover:bg-red-500/5 cursor-pointer"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <>
+              <button 
+                onClick={() => navigate('/login')}
+                style={{ fontFamily: "'DM Sans', sans-serif" }} 
+                className="text-[#7b80a8] hover:text-white text-sm font-medium transition-colors px-4 py-2"
+              >
+                Sign in
+              </button>
+              <button 
+                onClick={() => navigate('/login')}
+                className="relative group px-5 py-2 rounded-lg text-sm font-semibold text-white overflow-hidden" 
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#4f6ef7] to-[#7c3aed] group-hover:opacity-90 transition-opacity" />
+                <span className="relative">Get Started</span>
+              </button>
+            </>
+          )}
         </div>
 
         <button className="md:hidden text-white" onClick={() => setOpen(!open)}>
@@ -85,9 +134,42 @@ function Nav() {
               {l}
             </a>
           ))}
-          <button className="mt-2 w-full py-3 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-[#4f6ef7] to-[#7c3aed]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Get Started
-          </button>
+          {user ? (
+            <div className="mt-2 border-t border-[rgba(79,110,247,0.12)] pt-4 flex flex-col gap-3">
+              <div className="flex items-center gap-3 bg-[rgba(79,110,247,0.05)] border border-[rgba(79,110,247,0.12)] rounded-xl p-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f6ef7] to-[#7c3aed] flex items-center justify-center font-bold text-white uppercase text-sm">
+                  {user.name ? user.name[0] : (user.email ? user.email[0] : 'U')}
+                </div>
+                <div className="flex flex-col text-left">
+                  {user.name && (
+                    <span className="text-white text-sm font-bold">{user.name}</span>
+                  )}
+                  <span className="text-[#7b80a8] text-xs font-medium truncate max-w-[200px]">{user.email}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setOpen(false);
+                  handleLogout();
+                }}
+                className="w-full py-3 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors cursor-pointer" 
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Log Out
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => {
+                setOpen(false);
+                navigate('/login');
+              }}
+              className="mt-2 w-full py-3 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-[#4f6ef7] to-[#7c3aed]" 
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              Sign In / Get Started
+            </button>
+          )}
         </div>
       )}
     </nav>
@@ -923,8 +1005,8 @@ function Footer() {
   );
 }
 
-// ── App ────────────────────────────────────────────────────────────────────
-export default function App() {
+// ── LandingPage ────────────────────────────────────────────────────────────
+function LandingPage() {
   return (
     <div className="min-h-screen bg-[#04040f] text-[#e2e4f0]" style={{ scrollBehavior: "smooth" }}>
       <style>{`
@@ -947,5 +1029,17 @@ export default function App() {
       <Contact />
       <Footer />
     </div>
+  );
+}
+
+// ── App Router ─────────────────────────────────────────────────────────────
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
